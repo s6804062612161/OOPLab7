@@ -1,0 +1,106 @@
+import java.util.ArrayDeque;
+import java.util.Queue;
+import java.util.Scanner;
+
+public class MazeBomb {
+    static class State {
+        int r, c, bombsUsed, dist;
+        State(int r, int c, int bombsUsed, int dist) {
+            this.r = r;
+            this.c = c;
+            this.bombsUsed = bombsUsed;
+            this.dist = dist;
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (!sc.hasNextInt()) return;
+
+        int M = sc.nextInt();
+        int N = sc.nextInt();
+        int rs = sc.nextInt() - 1;
+        int cs = sc.nextInt() - 1;
+        int re = sc.nextInt() - 1;
+        int ce = sc.nextInt() - 1;
+
+        int[][] grid = new int[M][N];
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                grid[i][j] = sc.nextInt();
+            }
+        }
+
+        int[][][] distS = bfsDist(M, N, rs, cs, grid);
+        int[][][] distE = bfsDist(M, N, re, ce, grid);
+
+        int shortest = Integer.MAX_VALUE;
+        for (int r = 0; r < M; r++) {
+            for (int c = 0; c < N; c++) {
+                if (grid[r][c] == 0) {
+                    if (distS[r][c] != -1 && distE[r][c] != -1) {
+                        int d = distS[r][c] + distE[r][c] - 1;
+                        if (d < shortest) shortest = d;
+                    }
+                }
+            }
+        }
+
+        int validWallCount = 0;
+        if (shortest != Integer.MAX_VALUE) {
+            for (int r = 0; r < M; r++) {
+                for (int c = 0; c < N; c++) {
+                    if (grid[r][c] == 0) {
+                        if (distS[r][c] != -1 && distE[r][c] != -1) {
+                            validWallCount++;
+                        }
+                    }
+                }
+            }
+        } else {
+            shortest = 0;
+        }
+
+        System.out.println(validWallCount);
+        System.out.println(shortest);
+    }
+
+    static int[][][] bfsDist(int M, int N, int startR, int startC, int[][] grid) {
+        int[][][] dist = new int[M][N][1];
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                dist[i][j] = -1;
+                dist[i][j][2] = -1;
+            }
+        }
+
+        Queue<State> q = new ArrayDeque<>();
+        q.add(new State(startR, startC, 0, 1));
+        dist[startR][startC] = 1;
+
+        int[] dr = {-1, 1, 0, 0};
+        int[] dc = {0, 0, -1, 1};
+
+        while (!q.isEmpty()) {
+            State curr = q.poll();
+
+            for (int i = 0; i < 4; i++) {
+                int nr = curr.r + dr[i];
+                int nc = curr.c + dc[i];
+
+                if (nr >= 0 && nr < M && nc >= 0 && nc < N) {
+                    int isWall = (grid[nr][nc] == 0) ? 1 : 0;
+                    int nextBombs = curr.bombsUsed + isWall;
+
+                    if (nextBombs <= 1) {
+                        if (dist[nr][nc][nextBombs] == -1) {
+                            dist[nr][nc][nextBombs] = curr.dist + 1;
+                            q.add(new State(nr, nc, nextBombs, curr.dist + 1));
+                        }
+                    }
+                }
+            }
+        }
+        return dist;
+    }
+}
